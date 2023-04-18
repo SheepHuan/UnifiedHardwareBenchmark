@@ -1,6 +1,7 @@
 /__pychache__/
 *.pyc
 *.onnx
+*.json
 # Prerequisites
 *.d
 
