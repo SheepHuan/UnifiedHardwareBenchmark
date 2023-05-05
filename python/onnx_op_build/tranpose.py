@@ -40,9 +40,10 @@ def run_transpose_node(node, input_tensors_info, output_tensor_info):
     )
 
     model_proto = onnx.helper.make_model(graph_proto, producer_name='onnx-example')
-    # model_proto.opset_import[0].version = 15
+    # set the opset version and export the model
+    model_proto.opset_import[0].version = 18
+    model_proto.ir_version = 8
     onnx.save_model(model_proto, "tmp/model.onnx")
-    # model = onnx.load_model( "tmp/model.onnx")
  
     so = ort.SessionOptions()
     so.enable_profiling = True
@@ -52,12 +53,13 @@ def run_transpose_node(node, input_tensors_info, output_tensor_info):
     input= sess.get_inputs()[0]
     output = sess.get_outputs()[0]
     input_shape = input.shape
+    print(output.shape)
 
-    input_tensor = np.random.random(input_shape).astype(np.float32)
-    # 运行指定节点
-    for i in range(10):
-        c = sess.run([output.name], {input.name: input_tensor})
-        print(c[0].shape)
+    # input_tensor = np.random.random(input_shape).astype(np.float32)
+    # # 运行指定节点
+    # for i in range(10):
+    #     c = sess.run([output.name], {input.name: input_tensor})
+    #     print(c[0].shape)
  
 
 if __name__ == "__main__":  
@@ -65,6 +67,6 @@ if __name__ == "__main__":
     # run_transpose_node(transpose_node, input_tensors_info, output_tensors_info)
     shape =[100, 256,3]
     permutations = list(itertools.permutations(np.arange(len(shape))))
-    transpose_node, input_tensors_info, output_tensors_info = make_transpose_node([3,10], [0,1])
+    transpose_node, input_tensors_info, output_tensors_info = make_transpose_node([3,10,8], [0,2,1])
     run_transpose_node(transpose_node, input_tensors_info, output_tensors_info)
     print(permutations)
