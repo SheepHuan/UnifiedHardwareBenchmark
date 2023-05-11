@@ -44,18 +44,20 @@ def run_conv_node(node,input_tensors_info,output_tensors_info,weight_tensors):
     # 先构图
     graph_def = onnx.helper.make_graph(
         [node],  # 节点列表
-        'test_model',  # 图的名称
+        'conv2d_model',  # 图的名称
         input_tensors_info,  # 输入张量列表
         output_tensors_info,  # 输出张量列表
         weight_tensors  # 可选的初始化张量列表
     )
     # 
     model_def = onnx.helper.make_model(graph_def, producer_name='onnx-example')
-    onnx.save_model(model_def, "tmp/model.onnx")
+    model_def.ir_version = 8
+    model_def.opset_import[0].version = 18
+    onnx.save_model(model_def, f"{workspace}/model.onnx")
     so = ort.SessionOptions()
     so.enable_profiling = True
-    so.profile_file_prefix = f"tmp/conv"
-    sess = ort.InferenceSession("tmp/model.onnx", so)
+    so.profile_file_prefix = f"{workspace}/conv"
+    sess = ort.InferenceSession(f"{workspace}/model.onnx", so)
     input = sess.get_inputs()[0]
     output = sess.get_outputs()[0]
     input_shape = input.shape
@@ -63,19 +65,40 @@ def run_conv_node(node,input_tensors_info,output_tensors_info,weight_tensors):
     for i in range(10):
         out = sess.run([output.name], {input.name: input_tensor})
 
+def save_conv_node(node,input_tensors_info,output_tensors_info,weight_tensors,hw,ksize,stride):
+    graph_def = onnx.helper.make_graph(
+        [node],  # 节点列表
+        'conv2d_model',  # 图的名称
+        input_tensors_info,  # 输入张量列表
+        output_tensors_info,  # 输出张量列表
+        weight_tensors  # 可选的初始化张量列表
+    )
+    # 
+    model_def = onnx.helper.make_model(graph_def, producer_name='onnx-example')
+    model_def.ir_version = 8
+    model_def.opset_import[0].version = 18
+    # hw_ksize_stride_padding_dilation
+    onnx.save_model(model_def, f"{workspace}/conv2d_{hw}_{ksize}_{stride}_{1}_{1}.onnx")
+
 
 if __name__ == "__main__":
-    input_hws = [512]
-    conv2d_ksizes = [3]
-    conv2d_strides = [2]
-    # 构图
+    workspace = "D:/yanghuan/code/UnifiedHardwareBenchmark/workspace/ort_models"
+    input_hw = [8192,4096,2048,1024,512,384]
+    input_hws = [512,384,256,192,128]
+    conv2d_ksizes = [3,5,7,9,11,13,15,17,19,21,23,25]
+    conv2d_strides = [1,2,3,4,5,7,9,11]
+    
+    # input_hws = [128]
+    # conv2d_ksizes = [3]
+    # conv2d_strides = [1]
 
     for input_hw in input_hws:
         for conv2d_ksize in conv2d_ksizes:
             for conv2d_stride in conv2d_strides:
                 conv2d_node, input_tensors_info, output_tensors_info, weight_tensors = make_conv2d_node(
                     [1, 3, input_hw, input_hw], conv2d_ksize, conv2d_stride, 1, 0, index=0)
-                run_conv_node(conv2d_node,input_tensors_info,output_tensors_info,weight_tensors)
+                # run_conv_node(conv2d_node,input_tensors_info,output_tensors_info,weight_tensors)
+                save_conv_node(conv2d_node,input_tensors_info,output_tensors_info,weight_tensors,input_hw,conv2d_ksize,conv2d_stride)
    
     
     # onnx.save(model_def, 'test_model.onnx')

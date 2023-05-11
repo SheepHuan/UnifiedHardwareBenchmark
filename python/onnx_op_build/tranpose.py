@@ -42,7 +42,7 @@ def run_transpose_node(node, input_tensors_info, output_tensor_info):
     model_proto = onnx.helper.make_model(graph_proto, producer_name='onnx-example')
     # set the opset version and export the model
     model_proto.opset_import[0].version = 18
-    model_proto.ir_version = 8
+    model_proto.ir_version = 8                                          
     onnx.save_model(model_proto, "tmp/model.onnx")
  
     so = ort.SessionOptions()
