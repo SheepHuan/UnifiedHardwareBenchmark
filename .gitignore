@@ -1,14 +1,12 @@
-/__pychache__/
-*.pyc
-*.onnx
-*.json
-*.zip
+.
 profile/
 worksapce/
 # Prerequisites
 *.d
-
-# Compiled Object files
+*.zip
+*.png
+*.onnx
+# Compizipled ObjectPNfiles
 *.slo
 *.lo
 *.o

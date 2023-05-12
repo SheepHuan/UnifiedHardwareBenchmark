@@ -16,7 +16,7 @@ def make_matmul_3d_node(input_a_shape: List[int], input_b_shape: List[int], type
 def make_matmul_2d_node(input_a_shape: List[int], input_b_shape: List[int], type: onnx.TensorProto.DataType = onnx.TensorProto.FLOAT, index=0):
     input_a_tensor_name = f'matmul_input_a.{index}'
     input_b_tensor_name = f'matmul_input_b.{index}'
-    output_c_tensor_name = f'conv_output_c.{index}'
+    output_c_tensor_name = f'matmul_output_c.{index}'
 
     height_a, width_a = input_a_shape
     height_b, width_b = input_b_shape
@@ -71,8 +71,36 @@ def run_matmul_node(node, input_tensors_info, output_tensor_info):
         c = sess.run([output_c.name], {input_a.name: input_a_tensor,input_b.name : input_b_tensor})
 
 
-if __name__ == "__main__":
+def save_matmul_node(node,input_tensors_info,output_tensors_info,hw1,hw2):
+    graph_def = onnx.helper.make_graph(
+        [node],  # 节点列表
+        'matmul_model',  # 图的名称
+        input_tensors_info,  # 输入张量列表
+        output_tensors_info,  # 输出张量列表
+    )
+    # 
+    model_def = onnx.helper.make_model(graph_def, producer_name='onnx-example')
+    model_def.ir_version = 8
+    model_def.opset_import[0].version = 18
+    onnx.save_model(model_def, f"{workspace}/matmul_{hw1[0]}x{hw1[1]}_{hw2[0]}x{hw2[1]}.onnx")
 
-    matmul_node, input_tensors_info, output_tensors_info = make_matmul_2d_node([
-                                                                               128, 256], [256, 128])
-    run_matmul_node(matmul_node, input_tensors_info, output_tensors_info)
+if __name__ == "__main__":
+    workspace = "/root/workspace/UnifiedHardwareBenchmark/python/workspace/matmul"
+    hws = [
+        [64,64],
+        [64,96],
+        [64,128],
+        [64,256],
+        [128,64],
+        [128,96],
+        [128,128],
+        [128,256],
+        [256,64],
+        [256,96],
+        [256,128],
+        [256,256],
+    ]
+    for hw in hws:
+        hw2 = [hw[1],hw[0]]
+        matmul_node, input_tensors_info, output_tensors_info = make_matmul_2d_node(hw,hw2)
+        save_matmul_node(matmul_node, input_tensors_info, output_tensors_info,hw,hw2)
